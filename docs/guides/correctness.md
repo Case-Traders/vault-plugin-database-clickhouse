@@ -1,67 +1,67 @@
 # Verification
 
-How this plugin is checked before release.
+The plugin is checked with Coq proofs on selected `internal/` packages and with Docker integration tests against ClickHouse.
 
-## Layers
+## Verification layers
 
-| Layer | Tool | Command | What it checks |
-| ----- | ---- | ------- | -------------- |
-| Goose + Perennial | [Goose](https://github.com/goose-lang/goose) + [Perennial](https://github.com/mit-pdos/perennial) | `make proof` | Go source is translated to Coq; Iris WP proofs on `test*()` semantics functions |
-| Integration | testcontainers | `go test -tags=integration ./...` | Real ClickHouse DDL and Vault dbplugin RPC |
-
-Pure packages under `internal/` use imperative Go (Goose-compatible). `test*() bool` functions in `semantics.go` files are translated by Goose and proved in Perennial under [`proof/clickhouse/`](../../proof/clickhouse/).
-
-## Goose pipeline
-
-```bash
-make goose       # goose + proofgen → proof/goose/{code,generatedproof}/
-make proof       # compile Perennial proofs (Rocq 9.x via devenv nix input)
-make ci          # goose + proof
-make ci-integration  # ci + integration tests
-```
-
-Generated Coq is committed as gold in `proof/goose/`. Perennial is pinned by `PERENNIAL_PIN` and provided via `PERENNIAL_ROOT` (devenv nix input or a local checkout).
+| Layer | Tool | Command | Covers |
+| ----- | ---- | ------- | ------ |
+| Formal | [Goose](https://github.com/goose-lang/goose) + [Perennial](https://github.com/mit-pdos/perennial) | `make proof` | `test*()` functions in `semantics.go`; Iris WP termination |
+| Integration | testcontainers | `go test -tags=integration ./...` | SQL, Vault dbplugin RPC, plugin lifecycle |
 
 ## Proof layout
 
-| Path | Role |
-| ---- | ---- |
+| Path | Contents |
+| ---- | -------- |
 | `proof/goose/code/` | Goose translation (`New.code.*`) |
-| `proof/goose/generatedproof/` | Proofgen wrappers (`New.generatedproof.*`) |
-| `proof/clickhouse/init.v` | Shared `test_fun_ok` and tactics |
-| `proof/clickhouse/*_forall.v` | lemmas |
+| `proof/goose/generatedproof/` | proofgen wrappers (`New.generatedproof.*`) |
+| `proof/clickhouse/init.v` | `test_fun_ok`, `clickhouse_semantics_auto` |
+| `proof/clickhouse/*_forall.v` | One lemma per `test*()` function |
 
-## Semantics proofs
+Six packages: `stmt`, `cluster/choose`, `firsterror`, `vars`, `validate`, `deletepath`. Gold under `proof/goose/` is committed. Perennial pin: `PERENNIAL_PIN`. Tree: `PERENNIAL_ROOT` (default `.cache/perennial`).
 
-| Go package | Lemma file | Property |
-| ---------- | ---------- | -------- |
-| `internal/stmt` | `stmt_forall.v` | Idempotence|
-| `internal/cluster/choose` | `choose_forall.v` | Configured, empty, single, ambiguous clusters |
-| `internal/txexec` | `txexec_forall.v` | Fail-fast execution and error preservation |
-| `internal/vars` | `vars_forall.v` | Template placeholders |
-| `internal/stmts` | `stmts_forall.v` | Statement fallback |
-| `internal/validate` | `validate_forall.v` | Request guards |
-| `internal/deletepath` | `deletepath_forall.v` | DeleteUser routing |
+## Makefile targets
+
+| Target | Action |
+| ------ | ------ |
+| `make goose` | Regenerate `proof/goose/{code,generatedproof}/` |
+| `make proof-local` | Build Perennial deps, compile `proof/clickhouse/*.v`, require all six `*_forall.vo` |
+| `make proof` | `goose`, then `proof-local` |
+| `make ci` | `goose` + `proof` |
+| `make ci-integration` | `ci` + `go test -tags=integration ./...` |
+
+Cached `proof_prelude.vo` skips rebuilding Perennial only; plugin lemmas still compile each `proof-local` run.
+
+## Semantics lemmas
+
+Lemmas run the Goose translation with `clickhouse_semantics_auto`. No admitted WP layer for plugin code.
+
+| Package | Lemma file | Proved in `semantics.go` | Not proved here |
+| ------- | ---------- | ------------------------ | --------------- |
+| `stmt` | `stmt_forall.v` | `StatementsOrDefault`, slice length | `NormalizeCommands`, `strings.Split` |
+| `choose` | `choose_forall.v` | `configuredWins`, `discoveryRequired` | `ChooseCluster`, `strings.TrimSpace`, `sort` |
+| `firsterror` | `firsterror_forall.v` | `nilStep` returns nil | `FirstError` with closures |
+| `vars` | `vars_forall.v` | `OpNewUser`, `OpDeleteUser` values | `ForNewUser`, maps, `HasRequiredKeys` |
+| `validate` | `validate_forall.v` | `hasUsername`, `needsCreationStatements` | `UpdateUser` with `fmt.Errorf` |
+| `deletepath` | `deletepath_forall.v` | `UseCustomRevocation` on nil / one-element slice | — |
+
+Full behaviour for cluster selection, validation errors, and template keys is in integration tests.
 
 ## Integration tests
 
-| Test | Files |
+| Area | Files |
 | ---- | ----- |
-| Initialize | `clickhouse_integration_test.go` |
-| NewUser, UpdateUser, DeleteUser | `clickhouse_integration_test.go`, `clickhouse-database-plugin/plugin_integration_test.go` |
-| UpdateUser missing user | `clickhouse_integration_test.go` |
+| Plugin lifecycle, NewUser, UpdateUser, DeleteUser | `clickhouse_integration_test.go`, `clickhouse-database-plugin/plugin_integration_test.go` |
 | User exists | `internal/user/exists_integration_test.go` |
-| Cluster config override | `clickhouse_integration_test.go` |
+| Not Goose-translated | `cluster.Discover`, `user.Exists`, Vault RPC |
 
-## Toolchain setup
+## Setup
 
-1. `devenv shell`
-2. First time only: `ch-proof-setup` (or `make proof-setup`)
-3. `make goose` after changing provable Go
-4. `ch-proof`
+| Step | Command |
+| ---- | ------- |
+| Enter environment | `devenv shell` |
+| First-time Rocq / Perennial | `ch-proof-setup` |
+| After `semantics.go` or provable Go changes | `make goose` |
+| Compile proofs | `make proof` or `ch-proof` |
 
-`ch-proof-setup` installs Rocq via opam, Perennial dependencies, and builds `new/proof/proof_prelude.vo` in `.cache/perennial`. Re-run when `PERENNIAL_PIN` changes.
-
-Optional fallback: set `PERENNIAL_ROOT` to your own Perennial checkout per [Perennial opam guide](https://github.com/mit-pdos/perennial/blob/master/docs/opam.md).
-
-SQL I/O (`cluster.Discover`, `user.Exists`, Vault RPC) is not Goose-translated; integration tests cover it.
+Re-run `ch-proof-setup` when `PERENNIAL_PIN` changes. External Perennial: set `PERENNIAL_ROOT` ([opam guide](https://github.com/mit-pdos/perennial/blob/master/docs/opam.md)).
