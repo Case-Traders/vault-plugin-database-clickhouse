@@ -8,6 +8,10 @@ End pkg_id.
 Export pkg_id.
 Module validate.
 
+Definition hasUsername {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/validate.hasUsername"%go.
+
+Definition needsCreationStatements {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/validate.needsCreationStatements"%go.
+
 Definition testUpdateUserValid {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/validate.testUpdateUserValid"%go.
 
 Definition testUpdateUserMissingUsername {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/validate.testUpdateUserMissingUsername"%go.
@@ -18,33 +22,41 @@ Definition UpdateUser {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string
 
 Definition CreationStatements {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/validate.CreationStatements"%go.
 
+(* go: semantics.go:3:6 *)
+Definition hasUsernameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "username",
+    exception_do (let: "username" := (GoAlloc go.string "username") in
+    return: ((![go.string] "username") ≠⟨go.string⟩ #""%go)).
+
+(* go: semantics.go:5:6 *)
+Definition needsCreationStatementsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "count",
+    exception_do (let: "count" := (GoAlloc go.int "count") in
+    return: ((![go.int] "count") ≤⟨go.int⟩ #(W64 0))).
+
 (* testUpdateUserValid accepts username with a password change.
 
-   go: semantics.go:4:6 *)
+   go: semantics.go:8:6 *)
 Definition testUpdateUserValidⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: ((let: "$a0" := #"alice"%go in
-     let: "$a1" := #true in
-     let: "$a2" := #false in
-     (FuncResolve UpdateUser [] #()) "$a0" "$a1" "$a2") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))).
+    exception_do (return: (let: "$a0" := #"alice"%go in
+     (FuncResolve hasUsername [] #()) "$a0")).
 
 (* testUpdateUserMissingUsername rejects empty username.
 
-   go: semantics.go:9:6 *)
+   go: semantics.go:13:6 *)
 Definition testUpdateUserMissingUsernameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: ((let: "$a0" := #""%go in
-     let: "$a1" := #true in
-     let: "$a2" := #false in
-     (FuncResolve UpdateUser [] #()) "$a0" "$a1" "$a2") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))).
+    exception_do (return: ((⟨go.bool⟩! (let: "$a0" := #""%go in
+     (FuncResolve hasUsername [] #()) "$a0")))).
 
 (* testCreationStatementsRequiresOne rejects empty creation lists.
 
-   go: semantics.go:14:6 *)
+   go: semantics.go:18:6 *)
 Definition testCreationStatementsRequiresOneⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: ((let: "$a0" := #(W64 0) in
-     (FuncResolve CreationStatements [] #()) "$a0") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))).
+    exception_do (return: (let: "$a0" := #(W64 0) in
+     (FuncResolve needsCreationStatements [] #()) "$a0")).
 
 (* UpdateUser checks UpdateUser request fields.
 
@@ -95,6 +107,8 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
+  #[global] hasUsername_unfold :: FuncUnfold hasUsername [] (hasUsernameⁱᵐᵖˡ);
+  #[global] needsCreationStatements_unfold :: FuncUnfold needsCreationStatements [] (needsCreationStatementsⁱᵐᵖˡ);
   #[global] testUpdateUserValid_unfold :: FuncUnfold testUpdateUserValid [] (testUpdateUserValidⁱᵐᵖˡ);
   #[global] testUpdateUserMissingUsername_unfold :: FuncUnfold testUpdateUserMissingUsername [] (testUpdateUserMissingUsernameⁱᵐᵖˡ);
   #[global] testCreationStatementsRequiresOne_unfold :: FuncUnfold testCreationStatementsRequiresOne [] (testCreationStatementsRequiresOneⁱᵐᵖˡ);

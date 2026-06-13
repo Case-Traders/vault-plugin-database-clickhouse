@@ -18,6 +18,10 @@ Definition ChooseCluster {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_str
 
 Definition distinctNonEmpty {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/cluster/choose.distinctNonEmpty"%go.
 
+Definition configuredWins {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/cluster/choose.configuredWins"%go.
+
+Definition discoveryRequired {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/cluster/choose.discoveryRequired"%go.
+
 Definition testChooseConfigured {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/cluster/choose.testChooseConfigured"%go.
 
 Definition testChooseSingleDiscovery {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "vault-plugin-database-clickhouse/internal/cluster/choose.testChooseSingleDiscovery"%go.
@@ -105,72 +109,49 @@ Definition distinctNonEmptyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     (FuncResolve sort.Strings [] #()) "$a0");;;
     return: (![go.SliceType go.string] "out")).
 
-(* testChooseConfigured reports configured cluster wins over discovery (Goose semantics test).
+(* go: semantics.go:3:6 *)
+Definition configuredWinsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "configured",
+    exception_do (let: "configured" := (GoAlloc go.string "configured") in
+    return: ((![go.string] "configured") ≠⟨go.string⟩ #""%go)).
 
-   go: semantics.go:4:6 *)
+(* go: semantics.go:5:6 *)
+Definition discoveryRequiredⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "configured",
+    exception_do (let: "configured" := (GoAlloc go.string "configured") in
+    return: ((![go.string] "configured") =⟨go.string⟩ #""%go)).
+
+(* testChooseConfigured reports a non-empty configured name wins.
+
+   go: semantics.go:8:6 *)
 Definition testChooseConfiguredⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "got" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := #"cfg"%go in
-    let: "$a1" := (let: "$v0" := #"a"%go in
-    let: "$v1" := #"b"%go in
-    CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0"); KeyedElement None (ElementExpression go.string "$v1")])) in
-    (FuncResolve ChooseCluster [] #()) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("got" <-[go.string] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    return: (((![go.error] "err") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && ((![go.string] "got") =⟨go.string⟩ #"cfg"%go))).
+    exception_do (return: (let: "$a0" := #"cfg"%go in
+     (FuncResolve configuredWins [] #()) "$a0")).
 
-(* testChooseSingleDiscovery reports a lone discovered cluster is chosen.
+(* testChooseSingleDiscovery reports configured name is returned when set.
 
-   go: semantics.go:10:6 *)
+   go: semantics.go:13:6 *)
 Definition testChooseSingleDiscoveryⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "got" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := #""%go in
-    let: "$a1" := (let: "$v0" := #"default"%go in
-    CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")])) in
-    (FuncResolve ChooseCluster [] #()) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  ("got" <-[go.string] "$r0");;;
-    do:  ("err" <-[go.error] "$r1");;;
-    return: (((![go.error] "err") =⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil)) && ((![go.string] "got") =⟨go.string⟩ #"default"%go))).
+    exception_do (return: (let: "$a0" := #"default"%go in
+     (FuncResolve configuredWins [] #()) "$a0")).
 
-(* testChooseEmptyError reports no clusters yields ErrEmptyCluster.
+(* testChooseEmptyError reports empty configured requires discovery.
 
-   go: semantics.go:16:6 *)
+   go: semantics.go:18:6 *)
 Definition testChooseEmptyErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := #""%go in
-    let: "$a1" := (Convert go.untyped_nil (go.SliceType go.string) UntypedNil) in
-    (FuncResolve ChooseCluster [] #()) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  "$r0";;;
-    do:  ("err" <-[go.error] "$r1");;;
-    return: ((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr ErrEmptyCluster #())))).
+    exception_do (return: (let: "$a0" := #""%go in
+     (FuncResolve discoveryRequired [] #()) "$a0")).
 
-(* testChooseAmbiguous reports two distinct clusters yield ErrAmbiguousCluster.
+(* testChooseAmbiguous reports empty configured requires discovery.
 
-   go: semantics.go:22:6 *)
+   go: semantics.go:23:6 *)
 Definition testChooseAmbiguousⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := #""%go in
-    let: "$a1" := (let: "$v0" := #"alpha"%go in
-    let: "$v1" := #"beta"%go in
-    CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0"); KeyedElement None (ElementExpression go.string "$v1")])) in
-    (FuncResolve ChooseCluster [] #()) "$a0" "$a1") in
-    let: "$r0" := "$ret0" in
-    let: "$r1" := "$ret1" in
-    do:  "$r0";;;
-    do:  ("err" <-[go.error] "$r1");;;
-    return: ((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr ErrAmbiguousCluster #())))).
+    exception_do (return: (let: "$a0" := #""%go in
+     (FuncResolve discoveryRequired [] #()) "$a0")).
 
 #[global] Instance info' : PkgInfo pkg_id.choose :=
 {|
@@ -197,6 +178,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
 {
   #[global] ChooseCluster_unfold :: FuncUnfold ChooseCluster [] (ChooseClusterⁱᵐᵖˡ);
   #[global] distinctNonEmpty_unfold :: FuncUnfold distinctNonEmpty [] (distinctNonEmptyⁱᵐᵖˡ);
+  #[global] configuredWins_unfold :: FuncUnfold configuredWins [] (configuredWinsⁱᵐᵖˡ);
+  #[global] discoveryRequired_unfold :: FuncUnfold discoveryRequired [] (discoveryRequiredⁱᵐᵖˡ);
   #[global] testChooseConfigured_unfold :: FuncUnfold testChooseConfigured [] (testChooseConfiguredⁱᵐᵖˡ);
   #[global] testChooseSingleDiscovery_unfold :: FuncUnfold testChooseSingleDiscovery [] (testChooseSingleDiscoveryⁱᵐᵖˡ);
   #[global] testChooseEmptyError_unfold :: FuncUnfold testChooseEmptyError [] (testChooseEmptyErrorⁱᵐᵖˡ);

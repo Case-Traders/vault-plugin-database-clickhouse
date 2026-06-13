@@ -5,6 +5,25 @@
 -R @PERENNIAL_ROOT@/src Perennial
 -R @PERENNIAL_ROOT@/new New
 -Q @PLUGIN_ROOT@/proof/clickhouse ClickhouseProof
+goose/code/vault_plugin_database_clickhouse/internal/stmt.v
+goose/code/vault_plugin_database_clickhouse/internal/cluster/choose.v
+goose/code/vault_plugin_database_clickhouse/internal/firsterror.v
+goose/code/vault_plugin_database_clickhouse/internal/vars.v
+goose/code/vault_plugin_database_clickhouse/internal/validate.v
+goose/code/vault_plugin_database_clickhouse/internal/deletepath.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/stmt.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/cluster/choose.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/firsterror.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/vars.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/validate.v
+goose/generatedproof/vault_plugin_database_clickhouse/internal/deletepath.v
+clickhouse/init.v
+clickhouse/stmt_forall.v
+clickhouse/choose_forall.v
+clickhouse/firsterror_forall.v
+clickhouse/vars_forall.v
+clickhouse/validate_forall.v
+clickhouse/deletepath_forall.v
 -arg -w -arg +deprecated-instance-without-locality
 -arg -w -arg +ambiguous-paths
 -arg -w -arg +deprecated-hint-rewrite-without-locality
