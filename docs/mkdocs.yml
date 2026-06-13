@@ -1,0 +1,45 @@
+site_name: vault-plugin-database-clickhouse
+site_description: Vault database secrets plugin for ClickHouse
+site_url: https://case-traders.github.io/vault-plugin-database-clickhouse/
+repo_url: https://github.com/Case-Traders/vault-plugin-database-clickhouse
+repo_name: Case-Traders/vault-plugin-database-clickhouse
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Light mode
+  features:
+    - navigation.sections
+    - search.suggest
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Configuration: guides/configuration.md
+      - Installation: guides/installation.md
+      - Development: guides/development.md
+      - Correctness: guides/correctness.md
+  - API:
+      - clickhouse: api/clickhouse.md
+      - internal/cluster: api/internal/cluster.md
+      - internal/stmt: api/internal/stmt.md
+      - internal/txexec: api/internal/txexec.md
+      - internal/user: api/internal/user.md
+      - internal/vars: api/internal/vars.md
+      - testutil: api/testutil.md
+
+markdown_extensions:
+  - tables
+  - fenced_code
