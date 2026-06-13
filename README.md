@@ -4,7 +4,7 @@ External Vault database plugin for ClickHouse. Role statements in Vault drive us
 
 ![Architecture diagram](diagram.svg)
 
-Full docs: [case-traders.github.io/vault-plugin-database-clickhouse](https://case-traders.github.io/vault-plugin-database-clickhouse/) (installation, configuration, API). Source guides live under `docs/guides/`.
+Full docs: [case-traders.github.io/vault-plugin-database-clickhouse](https://case-traders.github.io/vault-plugin-database-clickhouse/)
 
 ## Install
 
@@ -26,12 +26,8 @@ ch-integration   # + ClickHouse testcontainers (Docker; Podman: devenv up first)
 
 → [Development](docs/guides/development.md) · [Correctness](docs/guides/correctness.md)
 
-## Releasing
-
-Push a `v*` tag → CI, then GoReleaser publishes platform zips, `checksums.txt`, SBOMs, cosign signatures.
-
-Local dry run: `ch-release-snapshot` (writes `dist/`, no publish/sign).
-
 ## Acknowledgments
 
-Thanks to [everythings-gonna-be-alright/vault-plugin-database-clickhouse](https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse) for the original plugin. This is a Case-Traders rewrite, not a continuation of upstream releases.
+Thanks to [everythings-gonna-be-alright/vault-plugin-database-clickhouse](https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse) for the original plugin.
+
+This is a Case-Traders rewrite, not a continuation of upstream releases.
