@@ -84,6 +84,7 @@ in
     goreleaser
     cosign
     syft
+    gh
   ];
 
   # When Docker is absent, start a Podman API socket for testcontainers.
