@@ -2,10 +2,8 @@ package testutil
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/testcontainers/testcontainers-go"
 	tcclickhouse "github.com/testcontainers/testcontainers-go/modules/clickhouse"
 )
 
@@ -15,7 +13,6 @@ func StartClickHouse(t *testing.T) (*tcclickhouse.ClickHouseContainer, string) {
 	ctx := context.Background()
 	container, err := tcclickhouse.Run(ctx,
 		"clickhouse/clickhouse-server:24.8-alpine",
-		useDefaultSuperuser(),
 	)
 	if err != nil {
 		t.Fatalf("start clickhouse: %v", err)
@@ -25,19 +22,9 @@ func StartClickHouse(t *testing.T) (*tcclickhouse.ClickHouseContainer, string) {
 			t.Logf("terminate clickhouse: %v", err)
 		}
 	})
-	host, err := container.ConnectionHost(ctx)
+	dsn, err := container.ConnectionString(ctx)
 	if err != nil {
-		t.Fatalf("connection host: %v", err)
+		t.Fatalf("connection string: %v", err)
 	}
-	dsn := fmt.Sprintf("clickhouse://default@%s/default", host)
 	return container, dsn
-}
-
-// useDefaultSuperuser clears CLICKHOUSE_USER so the image default superuser stays.
-func useDefaultSuperuser() testcontainers.CustomizeRequestOption {
-	return func(req *testcontainers.GenericContainerRequest) error {
-		delete(req.Env, "CLICKHOUSE_USER")
-		delete(req.Env, "CLICKHOUSE_PASSWORD")
-		return nil
-	}
 }
