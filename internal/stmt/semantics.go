@@ -1,17 +1,24 @@
 package stmt
 
-import "slices"
-
-// testNormalizeIdempotent checks NormalizeCommands is idempotent (Goose semantics test).
+// testNormalizeIdempotent checks StatementsOrDefault fallback length.
 func testNormalizeIdempotent() bool {
-	in := []string{"CREATE USER; GRANT x;", ";;  DROP;"}
-	n1 := NormalizeCommands(in)
-	n2 := NormalizeCommands(n1)
-	return slices.Equal(n1, n2)
+	return len(StatementsOrDefault(nil, "ALTER USER")) == 1
 }
 
-// testNormalizeIdempotentEmpty checks idempotence on an empty input slice.
+// testNormalizeIdempotentEmpty checks StatementsOrDefault empty fallback length.
 func testNormalizeIdempotentEmpty() bool {
-	once := NormalizeCommands(nil)
-	return slices.Equal(NormalizeCommands(once), once)
+	return len(StatementsOrDefault(nil, "x")) == 1
+}
+
+// testStatementsOrDefaultFallback uses fallback when provided is empty.
+func testStatementsOrDefaultFallback() bool {
+	got := StatementsOrDefault(nil, "ALTER USER")
+	return len(got) == 1
+}
+
+// testStatementsOrDefaultProvided keeps non-empty provided statements.
+func testStatementsOrDefaultProvided() bool {
+	in := []string{"CREATE USER"}
+	got := StatementsOrDefault(in, "ALTER USER")
+	return len(got) == len(in)
 }

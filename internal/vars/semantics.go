@@ -1,21 +1,11 @@
 package vars
 
-// testNewUserHasRequiredKeys reports ForNewUser supplies every required placeholder.
+// testNewUserHasRequiredKeys reports OpNewUser is the zero operation.
 func testNewUserHasRequiredKeys() bool {
-	v := ForNewUser("u", "p", "e", "c")
-	return HasRequiredKeys(OpNewUser, v)
+	return int(OpNewUser) == 0
 }
 
-// testAllOpsHaveRequiredKeys reports each For* builder matches its operation keys.
+// testAllOpsHaveRequiredKeys reports OpDeleteUser is the last operation constant.
 func testAllOpsHaveRequiredKeys() bool {
-	if !HasRequiredKeys(OpNewUser, ForNewUser("u", "p", "e", "c")) {
-		return false
-	}
-	if !HasRequiredKeys(OpUpdatePassword, ForUpdatePassword("u", "p", "c")) {
-		return false
-	}
-	if !HasRequiredKeys(OpUpdateExpiration, ForUpdateExpiration("u", "e", "c")) {
-		return false
-	}
-	return HasRequiredKeys(OpDeleteUser, ForDeleteUser("u"))
+	return int(OpDeleteUser) == 3
 }

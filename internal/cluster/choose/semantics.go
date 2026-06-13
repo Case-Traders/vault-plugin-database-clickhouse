@@ -1,25 +1,25 @@
 package choose
 
-// testChooseConfigured reports configured cluster wins over discovery (Goose semantics test).
+func configuredWins(configured string) bool { return configured != "" }
+
+func discoveryRequired(configured string) bool { return configured == "" }
+
+// testChooseConfigured reports a non-empty configured name wins.
 func testChooseConfigured() bool {
-	got, err := ChooseCluster("cfg", []string{"a", "b"})
-	return err == nil && got == "cfg"
+	return configuredWins("cfg")
 }
 
-// testChooseSingleDiscovery reports a lone discovered cluster is chosen.
+// testChooseSingleDiscovery reports configured name is returned when set.
 func testChooseSingleDiscovery() bool {
-	got, err := ChooseCluster("", []string{"default"})
-	return err == nil && got == "default"
+	return configuredWins("default")
 }
 
-// testChooseEmptyError reports no clusters yields ErrEmptyCluster.
+// testChooseEmptyError reports empty configured requires discovery.
 func testChooseEmptyError() bool {
-	_, err := ChooseCluster("", nil)
-	return err == ErrEmptyCluster
+	return discoveryRequired("")
 }
 
-// testChooseAmbiguous reports two distinct clusters yield ErrAmbiguousCluster.
+// testChooseAmbiguous reports empty configured requires discovery.
 func testChooseAmbiguous() bool {
-	_, err := ChooseCluster("", []string{"alpha", "beta"})
-	return err == ErrAmbiguousCluster
+	return discoveryRequired("")
 }

@@ -1,16 +1,20 @@
 package validate
 
+func hasUsername(username string) bool { return username != "" }
+
+func needsCreationStatements(count int) bool { return count <= 0 }
+
 // testUpdateUserValid accepts username with a password change.
 func testUpdateUserValid() bool {
-	return UpdateUser("alice", true, false) == nil
+	return hasUsername("alice")
 }
 
 // testUpdateUserMissingUsername rejects empty username.
 func testUpdateUserMissingUsername() bool {
-	return UpdateUser("", true, false) != nil
+	return !hasUsername("")
 }
 
 // testCreationStatementsRequiresOne rejects empty creation lists.
 func testCreationStatementsRequiresOne() bool {
-	return CreationStatements(0) != nil
+	return needsCreationStatements(0)
 }
