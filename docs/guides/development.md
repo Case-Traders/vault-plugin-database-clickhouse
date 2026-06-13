@@ -1,30 +1,43 @@
 # Development
 
-## Environment
+Local setup for building, verifying, and documenting the plugin.
+
+## devenv
 
 ```bash
 devenv shell
 ```
 
-Provides Go 1.25, Coq 8.18, coq-lsp, and Docker or Podman for testcontainers.
+Provides Go 1.25, Goose tools, **opam from nixpkgs** (Rocq/OCaml via project opam switch), and Docker or Podman for testcontainers.
 
-## Make targets
-
-| Target | Action |
-| ------ | ------ |
-| `make test` | Rapid property tests |
-| `make proof` | Coq proofs in `proof/` |
-| `make ci` | `proof` + `test` |
-| `make test-integration` | ClickHouse testcontainers (needs container runtime) |
+| Command | Purpose |
+| ------- | ------- |
+| `make build-linux-amd64` | Build plugin binary |
+| `make goose` | Translate provable Go packages to Coq |
+| `ch-proof-setup` | One-time opam switch + Perennial + Rocq (in shell) |
+| `make proof-setup` | Same as `ch-proof-setup` (works outside shell too) |
+| `ch-proof` or `make proof` | Compile Perennial Iris proofs |
+| `make ci` | `goose` + `proof` |
+| `make test-integration` | testcontainers integration tests |
 | `make ci-integration` | `ci` + integration tests |
-| `make docs` | Build GitHub Pages site into `site/` |
-| `make docs-serve` | Preview docs at http://127.0.0.1:8000 |
-| `goreleaser release --snapshot --clean --skip=sign` | Local release dry run into `dist/` |
+| `make docs` | API + MkDocs site |
 
-devenv scripts: `ch-test`, `ch-proof`, `ch-ci`, `ch-test-integration`, `ch-integration`, `ch-docs`, `ch-docs-serve`, `ch-release-snapshot`.
+Shell scripts: `ch-build`, `ch-proof-setup`, `ch-proof`, `ch-ci`, …
 
-## Integration tests
+## Environment
 
-testcontainers starts `clickhouse/clickhouse-server:24.8-alpine`. With Podman, run `devenv up` or enable `podman.socket` so `DOCKER_HOST` points at the user socket.
+GMP and libc headers come from nix (`env.PKG_CONFIG_PATH`, `env.CPATH` in devenv). Run `ch-proof-setup` once inside `devenv shell`.
 
-Plugin RPC tests live in `clickhouse-database-plugin/plugin_integration_test.go` and call `Run()` in a go-plugin subprocess.
+**First run is slow:** after Rocq installs, opam compiles **rocq-iris** (Iris) from pinned git sources. That step often takes **5-10 minutes** with minimal terminal output while `make`/`rocq` runs in the background. High CPU usage means it is working, not hung.
+
+## Containers
+
+Integration tests need Docker or Podman. devenv detects `/var/run/docker.sock`; otherwise it starts a Podman API socket (`devenv up`).
+
+## Docs
+
+```bash
+make docs-serve
+```
+
+See [Correctness guide](correctness.md) for Goose + Perennial verification.

@@ -49,7 +49,7 @@ make ci
 make ci-integration   # Docker or Podman; see development guide
 ```
 
-[Development guide](docs/guides/development.md). [Correctness guide](docs/guides/correctness.md) (Coq, Rapid, integration tests).
+[Development guide](docs/guides/development.md). [Correctness guide](docs/guides/correctness.md) (Goose, Perennial, integration tests).
 
 ## Acknowledgments
 

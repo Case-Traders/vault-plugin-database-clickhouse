@@ -9,7 +9,7 @@ Terraform example and install steps are on the [GitHub README](https://github.co
 - [Configuration](guides/configuration.md): Vault database config keys and Terraform examples
 - [Installation](guides/installation.md): plugin binary, registration, Kubernetes
 - [Development](guides/development.md): devenv, make targets, tests
-- [Correctness](guides/correctness.md): Coq, Rapid, integration tests
+- [Correctness](guides/correctness.md): Goose, Perennial, integration tests
 
 ## API
 
