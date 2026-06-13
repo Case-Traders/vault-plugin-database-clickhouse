@@ -1,11 +1,6 @@
 package vars
 
-import (
-	"maps"
-
-	A "github.com/IBM/fp-go/v2/array"
-	F "github.com/IBM/fp-go/v2/function"
-)
+import "maps"
 
 // Operation identifies which Vault dbplugin call built a template map.
 type Operation int
@@ -40,12 +35,8 @@ func (v TemplateVars) Map() map[string]string {
 }
 
 func (v TemplateVars) Keys() []string {
-	return F.Pipe1(v.values, mapKeys)
-}
-
-func mapKeys(m map[string]string) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
+	out := make([]string, 0, len(v.values))
+	for k := range v.values {
 		out = append(out, k)
 	}
 	return out
@@ -70,10 +61,12 @@ func RequiredKeys(op Operation) []string {
 
 // HasRequiredKeys reports whether v contains every key RequiredKeys lists for op.
 func HasRequiredKeys(op Operation, v TemplateVars) bool {
-	return F.Pipe1(
-		RequiredKeys(op),
-		A.Reduce(func(acc bool, k string) bool { return acc && v.Has(k) }, true),
-	)
+	for _, k := range RequiredKeys(op) {
+		if !v.Has(k) {
+			return false
+		}
+	}
+	return true
 }
 
 func ForNewUser(username, password, expiration, cluster string) TemplateVars {

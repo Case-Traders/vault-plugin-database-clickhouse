@@ -17,8 +17,11 @@ import (
 	"github.com/hashicorp/vault/sdk/database/helper/dbutil"
 	"github.com/hashicorp/vault/sdk/helper/template"
 	"vault-plugin-database-clickhouse/internal/cluster"
+	"vault-plugin-database-clickhouse/internal/deletepath"
+	"vault-plugin-database-clickhouse/internal/stmts"
 	"vault-plugin-database-clickhouse/internal/txexec"
 	"vault-plugin-database-clickhouse/internal/user"
+	"vault-plugin-database-clickhouse/internal/validate"
 	"vault-plugin-database-clickhouse/internal/vars"
 )
 
@@ -86,15 +89,6 @@ func (p *Clickhouse) resolveCluster(ctx context.Context, db *sql.DB) (string, er
 	return cluster.Resolve(ctx, db, p.clusterConfig)
 }
 
-func stmtsOrDefault(stmts []string, fallback string) []string {
-	nonEmpty := O.FromPredicate(func(ss []string) bool { return len(ss) > 0 })
-	provided, ok := O.Pipe1(stmts, nonEmpty)
-	toStmts := O.GetOrElse(func() []string { return []string{fallback} })
-	return F.Pipe1(provided, func(ss []string) []string {
-		return toStmts(ss, ok)
-	})
-}
-
 func whenPresent[T any](value *T, run func(*T) error) error {
 	v, ok := O.FromNillable(value)
 	if !ok {
@@ -147,7 +141,9 @@ func (p *Clickhouse) withExistingUser(ctx context.Context, username string, fn f
 
 // UpdateUser changes password and/or expiration for an existing ClickHouse user.
 func (p *Clickhouse) UpdateUser(ctx context.Context, req dbplugin.UpdateUserRequest) (dbplugin.UpdateUserResponse, error) {
-	if err := validateUpdateRequest(req); err != nil {
+	hasPassword := req.Password != nil
+	hasExpiration := req.Expiration != nil
+	if err := validate.UpdateUser(req.Username, hasPassword, hasExpiration); err != nil {
 		return dbplugin.UpdateUserResponse{}, err
 	}
 
@@ -162,19 +158,6 @@ func (p *Clickhouse) UpdateUser(ctx context.Context, req dbplugin.UpdateUserRequ
 			return p.changeUserExpiration(ctx, req.Username, ce)
 		}),
 	})
-}
-
-func validateUpdateRequest(req dbplugin.UpdateUserRequest) error {
-	_, err := RES.FromPredicate(P.IsNonZero[string](), func(string) error {
-		return fmt.Errorf("missing username")
-	})(req.Username)
-	if err != nil {
-		return err
-	}
-	if req.Password == nil && req.Expiration == nil {
-		return fmt.Errorf("no changes requested")
-	}
-	return nil
 }
 
 func joinErrors(errs []error) error {
@@ -194,26 +177,24 @@ func (p *Clickhouse) changeUserPassword(ctx context.Context, username string, ch
 	if err != nil {
 		return err
 	}
-	stmts := stmtsOrDefault(changePass.Statements.Commands, DefaultChangePasswordStatement)
+	roleStmts := stmts.StatementsOrDefault(changePass.Statements.Commands, DefaultChangePasswordStatement)
 	return p.withExistingUser(ctx, username, func(db *sql.DB, clusterName string) error {
-		return p.runStatements(ctx, db, stmts, vars.ForUpdatePassword(username, password, clusterName))
+		return p.runStatements(ctx, db, roleStmts, vars.ForUpdatePassword(username, password, clusterName))
 	})
 }
 
 func (p *Clickhouse) changeUserExpiration(ctx context.Context, username string, changeExp *dbplugin.ChangeExpiration) error {
-	stmts := stmtsOrDefault(changeExp.Statements.Commands, DefaultChangeExpirationStatement)
+	roleStmts := stmts.StatementsOrDefault(changeExp.Statements.Commands, DefaultChangeExpirationStatement)
 	return p.withExistingUser(ctx, username, func(db *sql.DB, clusterName string) error {
 		tmpl := vars.ForUpdateExpiration(username, formatExpiration(changeExp.NewExpiration), clusterName)
-		return p.runStatements(ctx, db, stmts, tmpl)
+		return p.runStatements(ctx, db, roleStmts, tmpl)
 	})
 }
 
 // NewUser runs creation statements and returns the generated Vault username.
 func (p *Clickhouse) NewUser(ctx context.Context, req dbplugin.NewUserRequest) (dbplugin.NewUserResponse, error) {
-	if _, err := RES.FromPredicate(func(n int) bool { return n > 0 }, func(int) error {
-		return dbutil.ErrEmptyCreationStatement
-	})(len(req.Statements.Commands)); err != nil {
-		return dbplugin.NewUserResponse{}, err
+	if err := validate.CreationStatements(len(req.Statements.Commands)); err != nil {
+		return dbplugin.NewUserResponse{}, dbutil.ErrEmptyCreationStatement
 	}
 
 	p.Lock()
@@ -242,10 +223,12 @@ func (p *Clickhouse) DeleteUser(ctx context.Context, req dbplugin.DeleteUserRequ
 	p.Lock()
 	defer p.Unlock()
 
-	err := O.Fold(
-		func() error { return p.defaultDeleteUser(ctx, req.Username) },
-		func(_ []string) error { return p.customDeleteUser(ctx, req.Username, req.Statements.Commands) },
-	)(O.Pipe1(req.Statements.Commands, O.FromPredicate(func(cmds []string) bool { return len(cmds) > 0 })))
+	err := p.withConnection(ctx, func(db *sql.DB) error {
+		if deletepath.UseCustomRevocation(req.Statements.Commands) {
+			return p.customDeleteUser(ctx, req.Username, req.Statements.Commands)
+		}
+		return p.defaultDeleteUser(ctx, req.Username)
+	})
 
 	return dbplugin.DeleteUserResponse{}, err
 }

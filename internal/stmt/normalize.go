@@ -1,23 +1,27 @@
 package stmt
 
-import (
-	"strings"
-
-	A "github.com/IBM/fp-go/v2/array"
-	F "github.com/IBM/fp-go/v2/function"
-	P "github.com/IBM/fp-go/v2/predicate"
-	"github.com/hashicorp/go-secure-stdlib/strutil"
-)
+import "strings"
 
 // NormalizeCommands splits each command on semicolons, trims whitespace, and drops empty parts.
 func NormalizeCommands(commands []string) []string {
-	return F.Pipe1(commands, A.Chain(normalizeStatement))
+	var out []string
+	for _, cmd := range commands {
+		out = append(out, normalizeStatement(cmd)...)
+	}
+	return out
 }
 
 func normalizeStatement(stmt string) []string {
-	return F.Pipe2(
-		strutil.ParseArbitraryStringSlice(stmt, ";"),
-		A.Map(strings.TrimSpace),
-		A.Filter(P.IsNonZero[string]()),
-	)
+	var out []string
+	for _, part := range splitSemicolon(stmt) {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func splitSemicolon(s string) []string {
+	return strings.Split(s, ";")
 }
