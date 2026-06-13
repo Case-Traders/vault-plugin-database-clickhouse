@@ -3,6 +3,8 @@
 Stmt.v
 Cluster.v
 FirstError.v
+Vars.v
 StmtProof.v
 ClusterProof.v
 FirstErrorProof.v
+VarsProof.v
