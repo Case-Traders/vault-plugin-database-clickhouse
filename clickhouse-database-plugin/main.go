@@ -15,7 +15,7 @@ func main() {
 	}
 }
 
-// Run instantiates a Clickhouse object, and runs the RPC server for the plugin
+// Run starts the ClickHouse database plugin RPC server.
 func Run() error {
 	dbType, err := clickhouse.New()
 	if err != nil {
