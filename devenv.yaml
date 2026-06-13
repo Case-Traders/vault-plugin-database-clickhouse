@@ -1,0 +1,15 @@
+inputs:
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  nixpkgs-stable:
+    url: github:NixOS/nixpkgs/nixos-25.05
+
+secretspec:
+  enable: true
+  profile: default
+  provider: dotenv
