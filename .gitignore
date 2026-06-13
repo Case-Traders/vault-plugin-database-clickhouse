@@ -4,8 +4,11 @@ dist/
 .DS_Store
 .go/
 site/
+docs/api/
 docs/diagram.svg
-proof/.Makefile.coq
+proof/Makefile.coq
+proof/Makefile.coq.conf
+proof/.Makefile.coq.d
 proof/*.vo
 proof/*.glob
 proof/*.vok
