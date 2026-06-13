@@ -2,5 +2,7 @@
 
 Stmt.v
 Cluster.v
+FirstError.v
 StmtProof.v
 ClusterProof.v
+FirstErrorProof.v
