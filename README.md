@@ -1,90 +1,37 @@
 # vault-plugin-database-clickhouse
-[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-direct.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
-![Diagram](diagram.svg)
+External Vault database plugin for ClickHouse. Role statements in Vault drive user DDL; use `{{cluster}}` in SQL for `ON CLUSTER` on clusters.
 
-Plugin for generating clickhouse user credentials from Vault.
+![Architecture diagram](diagram.svg)
 
-Supports single-node clickhouse and cluster versions.
+Full docs: [case-traders.github.io/vault-plugin-database-clickhouse](https://case-traders.github.io/vault-plugin-database-clickhouse/) (installation, configuration, API). Source guides live under `docs/guides/`.
 
-## Example of statement for user creation in vault configuration ( terraform ):
-``` hcl
-resource "vault_database_secret_backend_role" "clickhouse_analytics" {
-  backend = vault_mount.clickhouse.path
-  name    = "clickhouse_analytics"
-  db_name = "my_clickhouse"
-  creation_statements = ["CREATE USER '{{name}}' IDENTIFIED WITH sha256_password BY '{{password}}' ON CLUSTER '{{cluster}}';",
-  "GRANT ON CLUSTER '{{cluster}}' analytics TO '{{name}}';"]
-  default_ttl = 2593000
-  max_ttl     = 2593000
-}
+## Install
+
+1. Binary from [GitHub Releases](https://github.com/Case-Traders/vault-plugin-database-clickhouse/releases) or `make build-linux-amd64`
+2. `vault plugin register -sha256=… database clickhouse-database-plugin`
+3. Database secrets mount + connection config
+
+→ [Installation guide](docs/guides/installation.md) (K8s init container, paths)  
+→ [Configuration guide](docs/guides/configuration.md) (keys, placeholders, Terraform)
+
+## Development
+
+```bash
+devenv shell
+ch-build
+ch-ci            # Coq proofs + Rapid property tests
+ch-integration   # + ClickHouse testcontainers (Docker; Podman: devenv up first)
 ```
 
-## How to install ( Kubernetes ):
+→ [Development](docs/guides/development.md) · [Correctness](docs/guides/correctness.md)
 
-1) Add plugin directory to the vault config
-    ``` YAML
-    server:
-      # standalone or ha.raft
-      standalone:
-        config: |
-          plugin_directory = "/usr/local/libexec/vault/"
-    ```
+## Releasing
 
-2) Download and extract plugin
-    ``` YAML
-    server: 
-      volumes:
-        - name: plugins
-          emptyDir: {}
-  
-      volumeMounts:
-        - mountPath: /usr/local/libexec/vault
-          name: plugins
-          readOnly: true
-  
-      extraInitContainers:
-          - name: clickhouse
-            image: "alpine"
-            command: [sh, -c]
-            args:
-             - PLUGIN_PLATFORM='linux-amd64' &&
-               PLUGIN_VERSION=`wget -qO- "https://api.github.com/repos/everythings-gonna-be-alright/vault-plugin-database-clickhouse/releases/latest" | grep '"tag_name"' | cut -d '"' -f 4 ` &&
-               wget https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse/releases/download/${PLUGIN_VERSION}/clickhouse-database-plugin-${PLUGIN_PLATFORM}.zip -O clickhouse.zip &&
-               unzip clickhouse.zip &&
-               mv ${PLUGIN_PLATFORM}/clickhouse-database-plugin /usr/local/libexec/vault/clickhouse-database-plugin &&
-               rm clickhouse.zip &&
-               chmod +x /usr/local/libexec/vault/clickhouse-database-plugin
-            volumeMounts:
-              - name: plugins
-                mountPath: /usr/local/libexec/vault
-    ```
+Push a `v*` tag → CI, then GoReleaser publishes platform zips, `checksums.txt`, SBOMs, cosign signatures.
 
-3) Allow plugin ( Execute into vault pod shell )
-    ``` bash
-    cd /usr/local/libexec/vault/
-    
-    #calculate sha256 sum of plugin file
-    sha256sum clickhouse-database-plugin
-    
-    #login to vault as admin
-    vault login
-    # --enter your token---
-    
-    #register the plugin
-    vault plugin register -sha256=//sha256sum calculated earlier// database clickhouse-database-plugin
-    ```
+Local dry run: `ch-release-snapshot` (writes `dist/`, no publish/sign).
 
-## How to build it:
-``` bash
-make build-linux-amd64
-make build-linux-arm64
-make build-darwin-arm64
-```
+## Acknowledgments
 
-
-## Advertising
-
-You can aso check my another project for Clickhouse. High-performance HTTPS Clickhouse connector:
-
-https://github.com/everythings-gonna-be-alright/amazing-clickhouse-connector
+Thanks to [everythings-gonna-be-alright/vault-plugin-database-clickhouse](https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse) for the original plugin. This is a Case-Traders rewrite, not a continuation of upstream releases.
