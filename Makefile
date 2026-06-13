@@ -40,7 +40,9 @@ docs-api:
 		./internal/txexec ./internal/user ./internal/vars ./testutil
 
 docs: docs-api
-	cd docs && mkdocs build -d ../site
+	@cp diagram.svg docs/diagram.svg
+	mkdocs build
 
 docs-serve: docs-api
-	cd docs && mkdocs serve
+	@cp diagram.svg docs/diagram.svg
+	mkdocs serve

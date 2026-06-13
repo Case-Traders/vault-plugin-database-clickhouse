@@ -6,6 +6,7 @@ on:
     paths:
       - "**/*.go"
       - "docs/**"
+      - "mkdocs.yml"
       - "README.md"
       - "Makefile"
       - ".github/workflows/docs.yaml"
@@ -13,6 +14,7 @@ on:
     paths:
       - "**/*.go"
       - "docs/**"
+      - "mkdocs.yml"
       - "README.md"
       - "Makefile"
       - ".github/workflows/docs.yaml"
@@ -45,7 +47,7 @@ jobs:
         run: pip install mkdocs-material
 
       - name: Build docs
-        run: make docs-api && cd docs && mkdocs build -d ../site
+        run: make docs
 
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -2,7 +2,7 @@
 
 External Vault database plugin for ClickHouse. Role statements in Vault drive user DDL; use `{{cluster}}` in SQL for `ON CLUSTER` on clusters.
 
-![Architecture](../diagram.svg)
+![Architecture](diagram.svg)
 
 ## Guides
 

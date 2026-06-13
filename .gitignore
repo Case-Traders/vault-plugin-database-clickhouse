@@ -4,7 +4,7 @@ dist/
 .DS_Store
 .go/
 site/
-docs/api/
+docs/diagram.svg
 proof/.Makefile.coq
 proof/*.vo
 proof/*.glob
