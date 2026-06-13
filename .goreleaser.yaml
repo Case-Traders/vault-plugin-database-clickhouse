@@ -1,0 +1,52 @@
+version: 2
+
+project_name: clickhouse-database-plugin
+
+builds:
+  - id: plugin
+    main: ./clickhouse-database-plugin
+    binary: clickhouse-database-plugin
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: amd64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
+
+checksum:
+  name_template: checksums.txt
+
+archives:
+  - id: default
+    formats:
+      - zip
+    name_template: "clickhouse-database-plugin-{{ .Os }}-{{ .Arch }}"
+    wrap_in_directory: "{{ .Os }}-{{ .Arch }}"
+
+sboms:
+  - id: archive
+    artifacts: archive
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+release:
+  github:
+    owner: Case-Traders
+    name: vault-plugin-database-clickhouse
