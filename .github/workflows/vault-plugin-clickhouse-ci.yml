@@ -26,18 +26,34 @@ on:
       - "devenv.lock"
       - ".github/workflows/**"
 
+env:
+  PERENNIAL_PIN: c15c19774d4394959ae1e9ee85e5852df00046e7
+
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cachix/install-nix-action@v31
-      - uses: cachix/cachix-action@v16
+      - uses: actions/setup-go@v5
         with:
-          name: devenv
-      - name: Install devenv
-        run: nix profile install nixpkgs#devenv
-      - run: devenv shell -- make ci
+          go-version: "1.26.0"
+      - name: Goose gold
+        run: make goose
+      - uses: tchajed/setup-rocq@v1
+        with:
+          rocq-version: latest
+      - name: Perennial libraries
+        run: |
+          git clone --depth 1 https://github.com/mit-pdos/perennial.git /tmp/perennial
+          cd /tmp/perennial
+          git fetch --depth 1 origin "${{ env.PERENNIAL_PIN }}"
+          git checkout "${{ env.PERENNIAL_PIN }}"
+          opam install --deps-only -y ./perennial.opam
+          make -j2 new/proof/proof_prelude.vo
+      - name: Proofs
+        run: PERENNIAL_ROOT=/tmp/perennial make proof-local
+        env:
+          PATH: ${{ github.workspace }}/.go/bin:${{ env.PATH }}
 
   integration:
     runs-on: ubuntu-latest
@@ -49,4 +65,4 @@ jobs:
           name: devenv
       - name: Install devenv
         run: nix profile install nixpkgs#devenv
-      - run: devenv shell -- make ci-integration
+      - run: devenv shell -- sh -c 'make goose && make test-integration'
