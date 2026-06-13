@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/vault/sdk/helper/template"
 	"vault-plugin-database-clickhouse/internal/cluster"
 	"vault-plugin-database-clickhouse/internal/deletepath"
-	"vault-plugin-database-clickhouse/internal/stmts"
+	"vault-plugin-database-clickhouse/internal/stmt"
 	"vault-plugin-database-clickhouse/internal/txexec"
 	"vault-plugin-database-clickhouse/internal/user"
 	"vault-plugin-database-clickhouse/internal/validate"
@@ -177,14 +177,14 @@ func (p *Clickhouse) changeUserPassword(ctx context.Context, username string, ch
 	if err != nil {
 		return err
 	}
-	roleStmts := stmts.StatementsOrDefault(changePass.Statements.Commands, DefaultChangePasswordStatement)
+	roleStmts := stmt.StatementsOrDefault(changePass.Statements.Commands, DefaultChangePasswordStatement)
 	return p.withExistingUser(ctx, username, func(db *sql.DB, clusterName string) error {
 		return p.runStatements(ctx, db, roleStmts, vars.ForUpdatePassword(username, password, clusterName))
 	})
 }
 
 func (p *Clickhouse) changeUserExpiration(ctx context.Context, username string, changeExp *dbplugin.ChangeExpiration) error {
-	roleStmts := stmts.StatementsOrDefault(changeExp.Statements.Commands, DefaultChangeExpirationStatement)
+	roleStmts := stmt.StatementsOrDefault(changeExp.Statements.Commands, DefaultChangeExpirationStatement)
 	return p.withExistingUser(ctx, username, func(db *sql.DB, clusterName string) error {
 		tmpl := vars.ForUpdateExpiration(username, formatExpiration(changeExp.NewExpiration), clusterName)
 		return p.runStatements(ctx, db, roleStmts, tmpl)

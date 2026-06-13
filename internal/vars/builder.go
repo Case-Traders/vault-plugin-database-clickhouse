@@ -1,7 +1,5 @@
 package vars
 
-import "maps"
-
 // Operation identifies which Vault dbplugin call built a template map.
 type Operation int
 
@@ -24,13 +22,17 @@ type TemplateVars struct {
 // New copies base into a TemplateVars value.
 func New(base map[string]string) TemplateVars {
 	copied := make(map[string]string, len(base))
-	maps.Copy(copied, base)
+	for k, v := range base {
+		copied[k] = v
+	}
 	return TemplateVars{values: copied}
 }
 
 func (v TemplateVars) Map() map[string]string {
 	out := make(map[string]string, len(v.values))
-	maps.Copy(out, v.values)
+	for k, val := range v.values {
+		out[k] = val
+	}
 	return out
 }
 

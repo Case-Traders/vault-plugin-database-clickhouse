@@ -1,2 +1,2 @@
-// Package stmt splits Vault SQL statements into executable fragments.
+// Package stmt normalizes Vault SQL statements and selects role-provided defaults.
 package stmt

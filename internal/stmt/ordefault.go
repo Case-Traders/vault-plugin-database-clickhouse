@@ -1,4 +1,4 @@
-package stmts
+package stmt
 
 // StatementsOrDefault returns provided when non-empty, otherwise a single fallback statement.
 func StatementsOrDefault(provided []string, fallback string) []string {

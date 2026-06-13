@@ -1,4 +1,4 @@
-package txexec
+package firsterror
 
 // FirstError runs f on each string in order and returns the first error from f.
 func FirstError(xs []string, f func(string) error) error {
