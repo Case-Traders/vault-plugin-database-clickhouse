@@ -1,33 +1,56 @@
 # vault-plugin-database-clickhouse
 
-External Vault database plugin for ClickHouse. Role statements in Vault drive user DDL; use `{{cluster}}` in SQL for `ON CLUSTER` on clusters.
+Vault database plugin for ClickHouse. Creates users from Vault role statements.
 
-![Architecture diagram](diagram.svg)
+Supports single-node and clustered ClickHouse (`ON CLUSTER '{{cluster}}'` in your statements).
 
-Full docs: [case-traders.github.io/vault-plugin-database-clickhouse](https://case-traders.github.io/vault-plugin-database-clickhouse/)
+![Diagram](diagram.svg)
+
+Documentation: https://case-traders.github.io/vault-plugin-database-clickhouse/
+
+## Example
+
+```hcl
+resource "vault_database_secret_backend_role" "clickhouse_analytics" {
+  backend = vault_mount.clickhouse.path
+  name    = "clickhouse_analytics"
+  db_name = "my_clickhouse"
+  creation_statements = [
+    "CREATE USER '{{name}}' IDENTIFIED WITH sha256_password BY '{{password}}' ON CLUSTER '{{cluster}}';",
+    "GRANT ON CLUSTER '{{cluster}}' analytics TO '{{name}}';",
+  ]
+  default_ttl = 2593000
+  max_ttl     = 2593000
+}
+```
+
+More keys and placeholders: [Configuration guide](docs/guides/configuration.md).
 
 ## Install
 
-1. Binary from [GitHub Releases](https://github.com/Case-Traders/vault-plugin-database-clickhouse/releases) or `make build-linux-amd64`
-2. `vault plugin register -sha256=… database clickhouse-database-plugin`
-3. Database secrets mount + connection config
+Download a binary from [GitHub Releases](https://github.com/Case-Traders/vault-plugin-database-clickhouse/releases) or run `make build-linux-amd64`.
 
-→ [Installation guide](docs/guides/installation.md) (K8s init container, paths)  
-→ [Configuration guide](docs/guides/configuration.md) (keys, placeholders, Terraform)
-
-## Development
+Copy it into Vault's plugin directory, compute SHA256, register:
 
 ```bash
-devenv shell
-ch-build
-ch-ci            # Coq proofs + Rapid property tests
-ch-integration   # + ClickHouse testcontainers (Docker; Podman: devenv up first)
+sha256sum clickhouse-database-plugin
+vault login
+vault plugin register -sha256=<sha256> database clickhouse-database-plugin
 ```
 
-→ [Development](docs/guides/development.md) · [Correctness](docs/guides/correctness.md)
+Then configure a database secrets mount and connection. See [Installation guide](docs/guides/installation.md) for paths and Kubernetes init-container setup.
+
+## Build and test
+
+```bash
+devenv shell   # optional
+make build-linux-amd64
+make ci
+make ci-integration   # Docker or Podman; see development guide
+```
+
+[Development guide](docs/guides/development.md). [Correctness guide](docs/guides/correctness.md) (Coq, Rapid, integration tests).
 
 ## Acknowledgments
 
-Thanks to [everythings-gonna-be-alright/vault-plugin-database-clickhouse](https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse) for the original plugin.
-
-This is a Case-Traders rewrite, not a continuation of upstream releases.
+Thanks to [everythings-gonna-be-alright/vault-plugin-database-clickhouse](https://github.com/everythings-gonna-be-alright/vault-plugin-database-clickhouse) for the original plugin. Their commits are still in this repo's history.

@@ -1,8 +1,8 @@
 # vault-plugin-database-clickhouse
 
-External Vault database plugin for ClickHouse. Role statements in Vault drive user DDL; use `{{cluster}}` in SQL for `ON CLUSTER` on clusters.
-
 ![Architecture](diagram.svg)
+
+Terraform example and install steps are on the [GitHub README](https://github.com/Case-Traders/vault-plugin-database-clickhouse#example).
 
 ## Guides
 
