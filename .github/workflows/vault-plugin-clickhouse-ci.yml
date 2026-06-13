@@ -49,9 +49,16 @@ jobs:
           git fetch --depth 1 origin "${{ env.PERENNIAL_PIN }}"
           git checkout "${{ env.PERENNIAL_PIN }}"
           opam install --deps-only -y ./perennial.opam
-          make -j2 new/proof/proof_prelude.vo
+          make -j2 new/proof/proof_prelude.vo new/proof/strings.vo \
+            new/proof/slices_proof/slices_init.vo new/proof/errors.vo new/proof/io.vo \
+            new/proof/fmt.vo new/proof/sort_proof/sort_init.vo new/golang/theory.vo \
+            new/code/slices.vo new/code/strings.vo new/code/sort.vo new/code/errors.vo new/code/fmt.vo \
+            new/generatedproof/slices.vo new/generatedproof/strings.vo new/generatedproof/errors.vo \
+            new/generatedproof/fmt.vo new/generatedproof/sort.vo
       - name: Proofs
-        run: PERENNIAL_ROOT=/tmp/perennial make proof-local
+        run: |
+          PERENNIAL_ROOT=/tmp/perennial make proof
+          ! grep -rE 'Admitted|Abort\.' proof/clickhouse/*.v
         env:
           PATH: ${{ github.workspace }}/.go/bin:${{ env.PATH }}
 
