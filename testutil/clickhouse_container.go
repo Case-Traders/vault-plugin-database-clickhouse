@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/testcontainers/testcontainers-go"
 	tcclickhouse "github.com/testcontainers/testcontainers-go/modules/clickhouse"
 )
 
@@ -13,6 +14,9 @@ func StartClickHouse(t *testing.T) (*tcclickhouse.ClickHouseContainer, string) {
 	ctx := context.Background()
 	container, err := tcclickhouse.Run(ctx,
 		"clickhouse/clickhouse-server:24.8-alpine",
+		testcontainers.WithEnv(map[string]string{
+			"CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT": "1",
+		}),
 	)
 	if err != nil {
 		t.Fatalf("start clickhouse: %v", err)
