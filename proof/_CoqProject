@@ -1,4 +1,6 @@
 -R . ClickhouseProof
 
 Stmt.v
+Cluster.v
 StmtProof.v
+ClusterProof.v
